@@ -8,16 +8,26 @@
         insertafter: EOF
     - name: Apply sysctl config-file
       shell: sysctl -p
-    - name: Update apt
-      ignore_errors: true
-      apt:
-        update_cahe: yes
+    #- name: Update apt
+    #  ignore_errors: true
+    #    apt:
+    #      update_cahe: yes
     - name: Install package
       apt:
         pkg:
           - iptables-*
 - hosts: 200.100.200.100
   tasks:
+    - name: Check hostname
+      command: hostname
+      register: hostname
+    - name: Set hostnames
+      hostname:
+        name: FW
+      when: hostname.stdout != "FW"
+    - name: Reboot after rename
+      reboot:
+      when: hostname.stdout != "FW"
     - name: Configure iptables
       iptables:
         table: nat
@@ -26,4 +36,32 @@
         out_interface: ens192
         jump: MASQUERADE
     - name: Saving iptables
-      shell: iptables-save > /etc/iptables/rules.v4
+      #shell: iptables-save > /etc/iptables/rules.v4
+      community.general.iptables_state:
+        state: saved
+        path: /etc/iptables/rules.v4
+- hosts: 200.100.100.100
+  tasks:
+    - name: Check hostname
+      command: hostname
+      register: hostname
+    - name: Set hostnames
+      hostname:
+        name: CSR
+      when: hostname.stdout != "CSR"
+    - name: Reboot after rename
+      reboot:
+      when: hostname.stdout != "CSR"
+    - name: Configure iptables
+      iptables:
+        table: nat
+        chain: POSTROUTING
+        src_range: 192.168.0.0-192.168.255.255
+        out_interface: ens192
+        jump: MASQUERADE
+    - name: Saving iptables
+      #shell: iptables-save > /etc/iptables/rules.v4
+      community.general.iptables_state:
+        state: saved
+        path: /etc/iptables/rules.v4
+ 
