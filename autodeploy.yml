@@ -18,6 +18,19 @@
           - iptables-*
 - hosts: 200.100.200.100
   tasks:
+    - name: Configure GRE Tunnel
+      copy:
+        src: ./FW_gre.up
+        dest: /etc/FW_gre.up
+        mode: "0777"
+    - name: Start GRE tunnel
+      shell: /etc/FW_gre.up
+      ignore_errors: true
+    - name: Set CronTab
+      lineinfile:
+        path: /etc/crontab
+        line: "@reboot root /etc/FW_gre.up"
+        insertafter: EOF
     - name: Check hostname
       command: hostname
       register: hostname
@@ -42,6 +55,19 @@
         path: /etc/iptables/rules.v4
 - hosts: 200.100.100.100
   tasks:
+    - name: Configure GRE Tunnel
+      copy:
+        src: ./CSR_gre.up
+        dest: /etc/CSR_gre.up
+        mode: "0777"
+    - name: Start GRE tunnel
+      shell: /etc/CSR_gre.up
+      ignore_errors: true
+    - name: Set CronTab
+      lineinfile:
+        path: /etc/crontab
+        line: "@reboot root /etc/CSR_gre.up"
+        insertafter: EOF
     - name: Check hostname
       command: hostname
       register: hostname
