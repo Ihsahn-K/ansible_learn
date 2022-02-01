@@ -40,7 +40,7 @@
     - name: Ipsec secrets
       lineinfile:
         path: /etc/ipsec.secrets
-        line: '200.100.200.100 200.100.100.100 PSK : "2022"'
+        line: '200.100.100.100 200.100.200.100 PSK : "2022"'
         insertafter: OEF
     - name: Ipsec Start
       shell: ipsec start
@@ -70,6 +70,18 @@
       community.general.iptables_state:
         state: saved
         path: /etc/iptables/rules.v4
+#- hosts: 172.20.30.20
+#  tasks:
+#    - name: Docker Deploy
+#      docker_container:
+#        name: WebSite
+#        state: started
+#        image: beezzlot/docker-test
+#        ports:
+#          - "80:8080"
+
+    
+    
 - hosts: 200.100.100.100
   tasks:
     - name: Configure GRE Tunnel
@@ -107,7 +119,7 @@
       lineinfile:
         path: /etc/ipsec.secrets
         line: '200.100.100.100 200.100.200.100 PSK : "2022"'
-        insertafter: OEF
+        insertafter: EOF
     - name: Ipsec Start
       shell: ipsec start
       ignore_errors: true
