@@ -13,6 +13,7 @@
         pkg:
           - iptables-*
           - strongswan
+          - nginx
 - hosts: 200.100.200.100
   tasks:
     - name: Configure iptables
@@ -65,6 +66,15 @@
     - name: Reboot if hostname was changed
       reboot:
       when: hostname.stdout != "FW"
+    - name: Configure Nginx Proxy
+      copy:
+        src: ./proxy.conf
+        dest: /etc/nginx/sites-enabled/proxy.conf
+        mode: "0655"
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
 
 
 - hosts: 200.100.100.100
@@ -124,6 +134,9 @@
 ###############################################################################
 - hosts: central
   tasks:
+    - name: Update Apt
+      apt:
+        update_cache: yes
     - name: Install Package
       apt:
         pkg:
@@ -133,6 +146,9 @@
           - keepalived
           - docker 
           - docker.io
+          - ufw
+          - pip
+
 - hosts: 172.20.30.100 172.20.30.20
   tasks:
     - name: Configrue Chrony
@@ -144,6 +160,20 @@
       service:
         name: chronyd
         state: restarted
+
+    - name: Open port UFW for ssh
+      ufw:
+        state: enabled
+        rule: allow
+        port: '22'
+    - name: Open port UFW for https
+      ufw:
+        rule: allow
+        port: '443'
+    - name: Open port UFW for http
+      ufw:
+        rule: allow
+        port: '80'
 
 - hosts: 172.20.30.100
   vars_files:
@@ -180,7 +210,7 @@
       when: hostname100.stdout != "{{ vm_name_srv1 }}"
 
     - name: Docker Deploy
-      docker_container:
+      community.docker.docker_container:
         name: WebSite
         state: started
         image: beezzlot/docker-test
@@ -209,6 +239,22 @@
         src: ./ntp_check
         dest: /usr/ntp_check
         mode: "0777"
+
+    - name: Install Docker module for python
+      pip:
+        name: docker
+    - name: Docker Deploy
+      community.docker.docker_container:
+        name: WebSite
+        state: started
+        image: beezzlot/docker-test
+        ports:
+          - "80:8080"
+
+
+
+
+
 
     - name: Restarted Keepalived
       service:
